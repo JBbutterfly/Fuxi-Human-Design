@@ -18,14 +18,14 @@ export default function SignInPage() {
   useEffect(() => {
     if (loading) return;
     if (user) {
-      router.replace("/dashboard");
+      router.replace("/chart");
       return;
     }
     setStatus("completing");
     completeSignInFromLink(async () => window.prompt("Confirm the email you signed in with:"))
       .then((signedInUser) => {
         if (signedInUser) {
-          router.replace("/dashboard");
+          router.replace("/chart");
         } else {
           setStatus("idle");
         }
