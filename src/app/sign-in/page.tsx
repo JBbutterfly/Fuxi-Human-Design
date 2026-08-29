@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { completeSignInFromLink, sendMagicLink } from "@/lib/auth";
 import { useAuth } from "@/lib/AuthProvider";
+import { Button, Input } from "@/components/ui";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -51,43 +52,44 @@ export default function SignInPage() {
   }
 
   if (status === "completing") {
-    return <main className="flex-1 grid place-items-center p-8">Signing you in…</main>;
+    return (
+      <main className="fuxi-starfield flex-1 grid place-items-center p-8">
+        <p style={{ font: "var(--type-body)", color: "var(--text-secondary)" }}>Signing you in…</p>
+      </main>
+    );
   }
 
   if (status === "sent") {
     return (
-      <main className="flex-1 grid place-items-center p-8">
-        <p className="max-w-sm text-center">
-          Check <strong>{email}</strong> for a sign-in link. Open it on this device to finish
-          signing in.
+      <main className="fuxi-starfield flex-1 grid place-items-center p-8">
+        <p style={{ font: "var(--type-body)", color: "var(--text-secondary)", maxWidth: 360, textAlign: "center" }}>
+          Check <strong style={{ color: "var(--text-primary)" }}>{email}</strong> for a sign-in link. Open it on
+          this device to finish signing in.
         </p>
       </main>
     );
   }
 
   return (
-    <main className="flex-1 grid place-items-center p-8">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm flex flex-col gap-4">
-        <h1 className="text-xl font-semibold">Sign in to Fuxi</h1>
-        <p className="text-sm text-neutral-500">
-          Enter your email and we&apos;ll send you a link to sign in — no password needed.
-        </p>
-        <input
+    <main className="fuxi-starfield flex-1 grid place-items-center p-8">
+      <form onSubmit={handleSubmit} style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: "var(--sp-6)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
+          <h1 style={{ font: "var(--type-h1)", color: "var(--text-primary)" }}>Sign in to Fuxi</h1>
+          <p style={{ font: "var(--type-body-sm)", color: "var(--text-secondary)" }}>
+            Enter your email and we&apos;ll send you a link to sign in. No password.
+          </p>
+        </div>
+        <Input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="rounded border px-3 py-2"
         />
-        <button
-          type="submit"
-          disabled={status === "sending"}
-          className="rounded bg-neutral-900 text-white px-3 py-2 disabled:opacity-50"
-        >
-          {status === "sending" ? "Sending…" : "Send sign-in link"}
-        </button>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        <Button type="submit" disabled={status === "sending"} fullWidth>
+          {status === "sending" ? "Sending" : "Send sign-in link"}
+        </Button>
+        {error && <p style={{ font: "var(--type-ui-sm)", fontWeight: "var(--fw-regular)", color: "var(--status-error)" }}>{error}</p>}
       </form>
     </main>
   );

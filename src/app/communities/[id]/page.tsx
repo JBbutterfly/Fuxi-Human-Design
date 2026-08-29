@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/AuthProvider";
 import { getCommunity, leaveCommunity, listCommunityMembers } from "@/lib/communities";
+import { Badge, Button, Card } from "@/components/ui";
 import type { Community, Membership } from "@/types";
 
 export default function CommunityPage() {
@@ -43,34 +44,47 @@ export default function CommunityPage() {
     router.replace("/dashboard");
   }
 
-  if (loading) return <main className="flex-1 grid place-items-center p-8">Loading…</main>;
-  if (error) return <main className="flex-1 grid place-items-center p-8 text-red-600">{error}</main>;
-  if (!community) return <main className="flex-1 grid place-items-center p-8">Loading…</main>;
+  const loadingEl = (
+    <main className="flex-1 grid place-items-center p-8">
+      <p style={{ font: "var(--type-body)", color: "var(--text-secondary)" }}>Loading…</p>
+    </main>
+  );
+
+  if (loading) return loadingEl;
+  if (error) {
+    return (
+      <main className="flex-1 grid place-items-center p-8">
+        <p style={{ font: "var(--type-body)", color: "var(--status-error)" }}>{error}</p>
+      </main>
+    );
+  }
+  if (!community) return loadingEl;
 
   return (
-    <main className="flex-1 max-w-2xl mx-auto w-full p-8 flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">{community.name}</h1>
+    <main style={{ maxWidth: "var(--content-max)" }} className="flex-1 w-full mx-auto p-8 flex flex-col gap-7">
+      <h1 style={{ font: "var(--type-h1)", color: "var(--text-primary)" }}>{community.name}</h1>
 
       {me?.role === "admin" && (
-        <p className="text-sm text-neutral-500">
-          Join code: <code className="font-mono">{community.joinCode}</code>
+        <p style={{ font: "var(--type-body-sm)", color: "var(--text-secondary)" }}>
+          Join code: <span style={{ font: "var(--type-mono)", letterSpacing: "var(--ls-mono)", color: "var(--text-accent)" }}>{community.joinCode}</span>
         </p>
       )}
 
-      <section>
-        <h2 className="font-medium mb-2">Members</h2>
-        <ul className="flex flex-col gap-1">
+      <section className="flex flex-col gap-3">
+        <span className="fuxi-eyebrow">Members</span>
+        <div className="flex flex-col gap-2">
           {members.map((m) => (
-            <li key={m.id} className="text-sm">
-              {m.displayName} <span className="text-xs text-neutral-500">({m.role})</span>
-            </li>
+            <Card key={m.id} padding="var(--sp-4) var(--sp-5)" className="flex items-center justify-between">
+              <span style={{ font: "var(--type-body-sm)", color: "var(--text-primary)" }}>{m.displayName}</span>
+              <Badge tone={m.role === "admin" ? "gold" : "neutral"}>{m.role}</Badge>
+            </Card>
           ))}
-        </ul>
+        </div>
       </section>
 
-      <button onClick={handleLeave} className="text-sm text-red-600 self-start">
+      <Button variant="danger" size="sm" onClick={handleLeave} style={{ alignSelf: "flex-start" }}>
         Leave community
-      </button>
+      </Button>
     </main>
   );
 }

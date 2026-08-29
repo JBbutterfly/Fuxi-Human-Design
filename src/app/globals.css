@@ -1,26 +1,389 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Fuxi design tokens — ported from the design system's tokens/*.css.
+   Section boundaries below mirror that source 1:1 so it's easy to diff
+   against a future export. Never reference a raw ramp value (--gold-500,
+   --ink-900, ...) from a component — use the semantic alias (--accent,
+   --bg-canvas, ...) so the ramp can be retuned in one place.
+
+   Font *families* are intentionally NOT redeclared here (no
+   --font-display/--font-ui/--font-mono raw stacks) — layout.tsx loads
+   Spectral/Barlow/Space Mono via next/font and exposes those exact
+   variable names on <html>; typography.css's role tokens below just
+   reference var(--font-display) etc. and inherit whatever next/font sets.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* tokens/colors.css */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* obsidian base */
+  --ink-900: #0b0c0e;
+  --ink-850: #0f1113;
+  --ink-800: #121417;
+  --ink-700: #1a1d21;
+  --ink-600: #23272c;
+  --ink-500: #2e3339;
+  --ink-400: #3c424a;
+  /* parchment / river-stone neutrals */
+  --parchment-50: #f6f2e8;
+  --parchment-100: #ede6d6;
+  --parchment-200: #ded6c3;
+  --parchment-300: #cfc6b2;
+  --parchment-400: #b4ab96;
+  --parchment-500: #8f8878;
+  --parchment-600: #6b655a;
+  /* aged gold */
+  --gold-200: #ebd3a0;
+  --gold-300: #e0c079;
+  --gold-400: #d6a63c;
+  --gold-500: #c9962c;
+  --gold-600: #a87c21;
+  --gold-700: #7e5c17;
+  /* deep jade */
+  --jade-300: #4fa189;
+  --jade-400: #2e8069;
+  --jade-500: #26705b;
+  --jade-600: #1f5c4e;
+  --jade-700: #17453b;
+  --jade-800: #0f2e27;
+  /* five elements — functional legend colors, not decoration */
+  --el-wood: #2e8069;
+  --el-fire: #b5392a;
+  --el-earth: #c9962c;
+  --el-metal: #b9bfc4;
+  --el-water: #2a3a6b;
+  /* text-safe tints — the saturated --el-* values are swatch/keyline only and fail AA as small text on obsidian */
+  --el-wood-text: #4fa189;
+  --el-fire-text: #d4614e;
+  --el-earth-text: #d6a63c;
+  --el-metal-text: #b9bfc4;
+  --el-water-text: #6f82c4;
+  --el-wood-dim: #14342c;
+  --el-fire-dim: #3a1712;
+  --el-earth-dim: #3a2b0d;
+  --el-metal-dim: #2b3034;
+  --el-water-dim: #141a2e;
+  /* status */
+  --status-live: #4fa189;
+  --status-warn: #d6a63c;
+  --status-error: #c9503e;
+
+  /* semantic — dark is the default surface of the brand */
+  --bg-canvas: var(--ink-900);
+  --bg-surface: var(--ink-850);
+  --bg-raised: var(--ink-800);
+  --bg-sunken: #08090a;
+  --bg-inset: var(--ink-700);
+  --bg-hover: rgba(237, 230, 214, 0.05);
+  --bg-active: rgba(201, 150, 44, 0.1);
+  --surface-card: var(--ink-850);
+  --surface-card-hover: var(--ink-800);
+  --text-primary: var(--parchment-100);
+  --text-secondary: var(--parchment-400);
+  --text-muted: var(--parchment-500);
+  --text-accent: var(--gold-400);
+  --text-on-accent: var(--ink-900);
+  --text-inverse: var(--ink-900);
+  --border-hairline: var(--ink-500);
+  --border-soft: var(--ink-600);
+  --border-strong: var(--ink-400);
+  --border-accent: var(--gold-600);
+  --border-focus: var(--gold-400);
+  --accent: var(--gold-500);
+  --accent-hover: var(--gold-400);
+  --accent-press: var(--gold-600);
+  --accent-2: var(--jade-600);
+  --accent-2-hover: var(--jade-500);
+  --overlay-scrim: rgba(8, 9, 10, 0.72);
+  --glyph-line: var(--parchment-200);
+  --glyph-line-dim: var(--parchment-600);
+}
+/* parchment scope — long-form reading, print, marketing light sections */
+.fuxi-light {
+  --bg-canvas: var(--parchment-100);
+  --bg-surface: var(--parchment-50);
+  --bg-raised: #fffdf7;
+  --bg-sunken: var(--parchment-200);
+  --bg-inset: var(--parchment-200);
+  --bg-hover: rgba(11, 12, 14, 0.04);
+  --bg-active: rgba(201, 150, 44, 0.14);
+  --surface-card: var(--parchment-50);
+  --surface-card-hover: #fffdf7;
+  --text-primary: var(--ink-900);
+  --text-secondary: #4a4740;
+  --text-muted: var(--parchment-600);
+  --text-accent: var(--gold-700);
+  --text-on-accent: var(--parchment-50);
+  --text-inverse: var(--parchment-50);
+  --border-hairline: var(--parchment-300);
+  --border-soft: var(--parchment-200);
+  --border-strong: var(--parchment-400);
+  --border-accent: var(--gold-600);
+  --accent: var(--gold-600);
+  --accent-hover: var(--gold-500);
+  --accent-press: var(--gold-700);
+  --overlay-scrim: rgba(11, 12, 14, 0.55);
+  /* on parchment the saturated values are the legible ones */
+  --el-wood-text: #1f5c4e;
+  --el-fire-text: #b5392a;
+  --el-earth-text: #7e5c17;
+  --el-metal-text: #6b655a;
+  --el-water-text: #2a3a6b;
+  --glyph-line: var(--ink-800);
+  --glyph-line-dim: var(--parchment-400);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* tokens/typography.css */
+:root {
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-18: 18px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-28: 28px;
+  --fs-34: 34px;
+  --fs-42: 42px;
+  --fs-56: 56px;
+  --fs-72: 72px;
+  --lh-tight: 1.06;
+  --lh-snug: 1.22;
+  --lh-normal: 1.45;
+  --lh-loose: 1.65;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --ls-tight: -0.015em;
+  --ls-normal: 0;
+  --ls-wide: 0.04em;
+  --ls-caps: 0.14em;
+  --ls-mono: 0.02em;
+
+  /* roles */
+  --type-display: var(--fw-light) var(--fs-72) / var(--lh-tight) var(--font-display);
+  --type-h1: var(--fw-regular) var(--fs-42) / 1.12 var(--font-display);
+  --type-h2: var(--fw-regular) var(--fs-28) / var(--lh-snug) var(--font-display);
+  --type-h3: var(--fw-medium) var(--fs-20) / var(--lh-snug) var(--font-display);
+  --type-lede: var(--fw-light) var(--fs-20) / var(--lh-loose) var(--font-display);
+  --type-body: var(--fw-regular) var(--fs-16) / var(--lh-normal) var(--font-ui);
+  --type-body-sm: var(--fw-regular) var(--fs-14) / var(--lh-normal) var(--font-ui);
+  --type-ui: var(--fw-medium) var(--fs-14) / 1.2 var(--font-ui);
+  --type-ui-sm: var(--fw-medium) var(--fs-12) / 1.2 var(--font-ui);
+  --type-eyebrow: var(--fw-semibold) var(--fs-11) / 1.2 var(--font-ui);
+  --type-mono: var(--fw-regular) var(--fs-13) / 1.3 var(--font-mono);
+  --type-numeral: var(--fw-regular) var(--fs-24) / 1 var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+/* tokens/shape.css */
+:root {
+  --r-0: 0px;
+  --r-1: 2px;
+  --r-2: 3px;
+  --r-3: 6px;
+  --r-4: 10px;
+  --r-pill: 999px;
+  --radius-control: var(--r-1);
+  --radius-card: var(--r-2);
+  --radius-sheet: var(--r-3);
+  --radius-glyph: var(--r-0);
+  --bw-hairline: 1px;
+  --bw-emphasis: 2px;
+  --shadow-none: none;
+  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.4);
+  --shadow-raised: 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --shadow-sheet: 0 24px 64px -24px rgba(0, 0, 0, 0.85);
+  --shadow-card-light: 0 1px 2px rgba(11, 12, 14, 0.08);
+  --shadow-raised-light: 0 10px 30px -18px rgba(11, 12, 14, 0.35);
+  --ring-focus: 0 0 0 2px var(--bg-canvas), 0 0 0 3px var(--border-focus);
+  --rule-hairline: var(--bw-hairline) solid var(--border-hairline);
+  --rule-accent: var(--bw-hairline) solid var(--border-accent);
+}
+
+/* tokens/spacing.css */
+:root {
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 8px;
+  --sp-4: 12px;
+  --sp-5: 16px;
+  --sp-6: 20px;
+  --sp-7: 24px;
+  --sp-8: 32px;
+  --sp-9: 40px;
+  --sp-10: 48px;
+  --sp-11: 64px;
+  --sp-12: 80px;
+  --sp-13: 96px;
+  --sp-14: 128px;
+  --gutter-app: 24px;
+  --gutter-page: 40px;
+  --content-max: 1180px;
+  --prose-max: 66ch;
+  --control-h-sm: 28px;
+  --control-h-md: 36px;
+  --control-h-lg: 44px;
+  --touch-min: 44px;
+  --sidebar-w: 248px;
+  --topbar-h: 56px;
+}
+
+/* tokens/motion.css */
+:root {
+  --dur-instant: 80ms;
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+  --dur-reveal: 720ms;
+  --ease-standard: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0.4, 0.2, 1);
+  --ease-in: cubic-bezier(0.5, 0, 1, 1);
+  --motion-hover: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
+  --motion-reveal: opacity var(--dur-reveal) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-reveal: 0ms;
   }
 }
 
+/* tokens/base.css */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  font: var(--type-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-regular);
+  color: var(--text-primary);
+}
+p {
+  margin: 0 0 var(--sp-5);
+  text-wrap: pretty;
+}
+a {
+  color: var(--text-accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in oklab, var(--text-accent) 40%, transparent);
+  transition: var(--motion-hover);
+}
+a:hover {
+  color: var(--gold-300);
+  border-bottom-color: var(--gold-300);
+}
+::selection {
+  background: var(--gold-700);
+  color: var(--parchment-50);
+}
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+.fuxi-eyebrow {
+  font: var(--type-eyebrow);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fuxi-rule {
+  height: 1px;
+  background: var(--border-hairline);
+  border: 0;
+}
+/* star-chart field: faint scattered points, used full-bleed behind hero + chart canvases */
+.fuxi-starfield {
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(1px 1px at 20% 30%, rgba(237, 230, 214, 0.22) 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 18%, rgba(237, 230, 214, 0.16) 50%, transparent 51%),
+    radial-gradient(1px 1px at 41% 77%, rgba(201, 150, 44, 0.28) 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 62%, rgba(237, 230, 214, 0.13) 50%, transparent 51%),
+    radial-gradient(1px 1px at 9% 88%, rgba(237, 230, 214, 0.18) 50%, transparent 51%);
+  background-size: 340px 340px, 520px 520px, 410px 410px, 610px 610px, 290px 290px;
+}
+/* engraved grid: 8px lattice, the "ruled plate" motif behind data views */
+.fuxi-plate {
+  background-image: linear-gradient(to right, rgba(237, 230, 214, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(237, 230, 214, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Tailwind utility bridge — lets layout code reach tokens as e.g. bg-canvas,
+   text-primary, border-hairline without hardcoding var(...) everywhere. */
+@theme inline {
+  --color-ink-900: var(--ink-900);
+  --color-ink-850: var(--ink-850);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+
+  --color-parchment-50: var(--parchment-50);
+  --color-parchment-100: var(--parchment-100);
+  --color-parchment-200: var(--parchment-200);
+  --color-parchment-300: var(--parchment-300);
+  --color-parchment-400: var(--parchment-400);
+  --color-parchment-500: var(--parchment-500);
+  --color-parchment-600: var(--parchment-600);
+
+  --color-gold-200: var(--gold-200);
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-700: var(--gold-700);
+
+  --color-jade-300: var(--jade-300);
+  --color-jade-400: var(--jade-400);
+  --color-jade-500: var(--jade-500);
+  --color-jade-600: var(--jade-600);
+  --color-jade-700: var(--jade-700);
+  --color-jade-800: var(--jade-800);
+
+  --color-el-wood: var(--el-wood);
+  --color-el-fire: var(--el-fire);
+  --color-el-earth: var(--el-earth);
+  --color-el-metal: var(--el-metal);
+  --color-el-water: var(--el-water);
+
+  --color-bg-canvas: var(--bg-canvas);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-raised: var(--bg-raised);
+  --color-surface-card: var(--surface-card);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-accent: var(--text-accent);
+  --color-border-hairline: var(--border-hairline);
+  --color-border-accent: var(--border-accent);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+
+  --color-status-live: var(--status-live);
+  --color-status-warn: var(--status-warn);
+  --color-status-error: var(--status-error);
+
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-mono: var(--font-mono);
 }

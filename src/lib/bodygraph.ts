@@ -91,16 +91,19 @@ export interface BodyGraphTheme {
   wiringStroke: string;
 }
 
-// Fuxi's own default palette — indigo ground with a warm gold "on" color,
-// distinct from any reference material's branding.
+// Fuxi's brand palette (Aged Gold / Deep Jade / Obsidian, from the design
+// system) — kept as literal hex here rather than referencing the app's CSS
+// custom properties, since this SVG string can be rendered into contexts
+// (PDF export, off-screen nodes) that don't inherit page-level CSS variables.
+// Keep in sync with src/app/globals.css if the palette changes.
 export const DEFAULT_THEME: BodyGraphTheme = {
-  centerDefined: "#C99A3D", // gold — the "on"/defined color
-  centerUndefined: "#232A4A", // deep indigo — receded/open
+  centerDefined: "#C9962C", // gold-500 (--accent) — the "on"/defined color
+  centerUndefined: "#1A1D21", // ink-700 — receded/open
   centerStroke: "rgba(255,255,255,.28)",
-  personality: "#FFFFFF", // white — conscious activations
-  design: "#7DA0C4", // slate blue — unconscious activations
-  both: "#E8C170", // warm gold-lt — activated on both sides
-  undefinedGate: "#4A5578",
+  personality: "#F6F2E8", // parchment-50 — conscious activations
+  design: "#2E8069", // jade-400 — unconscious activations
+  both: "#E0C079", // gold-300 — activated on both sides
+  undefinedGate: "#2E3339", // ink-500
   silhouetteFill: "rgba(255,255,255,.06)",
   silhouetteStroke: "rgba(255,255,255,.12)",
   wiringStroke: "rgba(255,255,255,.10)",

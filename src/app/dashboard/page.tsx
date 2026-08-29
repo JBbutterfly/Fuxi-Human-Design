@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/AuthProvider";
 import { createCommunity, joinCommunityByCode, listMyMemberships } from "@/lib/communities";
 import { db } from "@/lib/firebase";
 import { signOutUser } from "@/lib/auth";
+import { Button, Card, Input } from "@/components/ui";
 import type { Membership, UserProfile } from "@/types";
 
 export default function DashboardPage() {
@@ -70,69 +71,77 @@ export default function DashboardPage() {
   }
 
   if (loading || !user) {
-    return <main className="flex-1 grid place-items-center p-8">Loading…</main>;
+    return (
+      <main className="flex-1 grid place-items-center p-8">
+        <p style={{ font: "var(--type-body)", color: "var(--text-secondary)" }}>Loading…</p>
+      </main>
+    );
   }
 
   return (
-    <main className="flex-1 max-w-2xl mx-auto w-full p-8 flex flex-col gap-8">
+    <main style={{ maxWidth: "var(--content-max)" }} className="flex-1 w-full mx-auto p-8 flex flex-col gap-9">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">
-          {profile ? `Welcome, ${profile.displayName}` : "Welcome"}
+        <h1 style={{ font: "var(--type-h1)", color: "var(--text-primary)" }}>
+          {profile ? profile.displayName : "Welcome"}
         </h1>
-        <button onClick={() => signOutUser().then(() => router.replace("/sign-in"))} className="text-sm text-neutral-500">
+        <button
+          onClick={() => signOutUser().then(() => router.replace("/sign-in"))}
+          style={{ font: "var(--type-ui-sm)", color: "var(--text-muted)", background: "none", border: 0, cursor: "pointer" }}
+        >
           Sign out
         </button>
       </div>
 
-      <section>
-        <h2 className="font-medium mb-2">Your communities</h2>
+      <section className="flex flex-col gap-3">
+        <span className="fuxi-eyebrow">Your communities</span>
         {memberships.length === 0 ? (
-          <p className="text-sm text-neutral-500">You&apos;re not in any communities yet.</p>
+          <p style={{ font: "var(--type-body-sm)", color: "var(--text-secondary)" }}>
+            Not in any communities yet.
+          </p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {memberships.map((m) => (
-              <li key={m.id}>
-                <Link href={`/communities/${m.communityId}`} className="underline">
-                  {m.communityId}
-                </Link>{" "}
-                <span className="text-xs text-neutral-500">({m.role})</span>
-              </li>
+              <Link key={m.id} href={`/communities/${m.communityId}`} style={{ borderBottom: "none" }}>
+                <Card interactive className="flex items-center justify-between">
+                  <span style={{ font: "var(--type-ui)", color: "var(--text-primary)" }}>{m.communityId}</span>
+                  <span style={{ font: "var(--type-ui-sm)", color: "var(--text-muted)" }}>{m.role}</span>
+                </Card>
+              </Link>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <form onSubmit={handleCreate} className="flex flex-col gap-2">
-          <h2 className="font-medium">Create a community</h2>
-          <input
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-7">
+        <Card as="form" onSubmit={handleCreate} className="flex flex-col gap-4">
+          <span className="fuxi-eyebrow">Create a community</span>
+          <Input
             required
             value={newCommunityName}
             onChange={(e) => setNewCommunityName(e.target.value)}
-            placeholder="e.g. The Beall Family"
-            className="rounded border px-3 py-2"
+            placeholder="e.g. The Beall family"
           />
-          <button disabled={busy} className="rounded bg-neutral-900 text-white px-3 py-2 disabled:opacity-50">
+          <Button type="submit" disabled={busy}>
             Create
-          </button>
-        </form>
+          </Button>
+        </Card>
 
-        <form onSubmit={handleJoin} className="flex flex-col gap-2">
-          <h2 className="font-medium">Join with a code</h2>
-          <input
+        <Card as="form" onSubmit={handleJoin} className="flex flex-col gap-4">
+          <span className="fuxi-eyebrow">Join with a code</span>
+          <Input
             required
+            mono
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
             placeholder="Join code"
-            className="rounded border px-3 py-2"
           />
-          <button disabled={busy} className="rounded bg-neutral-900 text-white px-3 py-2 disabled:opacity-50">
+          <Button type="submit" variant="jade" disabled={busy}>
             Join
-          </button>
-        </form>
+          </Button>
+        </Card>
       </section>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p style={{ font: "var(--type-ui-sm)", fontWeight: "var(--fw-regular)", color: "var(--status-error)" }}>{error}</p>}
     </main>
   );
 }
