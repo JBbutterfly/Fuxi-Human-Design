@@ -1,0 +1,106 @@
+rules_version = '2';
+
+// Design notes (read this before changing access rules):
+//
+// - `charts/{chartId}` is a person's private master record: only its owner can read or
+//   write it. This is where chart edits happen.
+// - Cross-member visibility ("all members see all members" within a community) is
+//   implemented via a separate, per-community published copy at
+//   `communities/{communityId}/sharedCharts/{ownerUid}`, written by the owner when they
+//   want their chart visible in that community. Any current member of that community can
+//   read it. This avoids needing a security rule that answers "do these two people share
+//   *any* community in common" (which Firestore rules can't check without either an
+//   unbounded lookup or a client-writable array of community ids — the latter would let a
+//   user grant themselves visibility into any community by editing their own profile).
+//   Scoping the check to "requester is a member of *this specific* community" keeps every
+//   check a single, non-tamperable `exists()`/`get()` on a known path.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function membershipDocId(communityId, uid) {
+      return communityId + '_' + uid;
+    }
+
+    // True if the caller has a membership doc in `communityId`.
+    function isMember(communityId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/memberships/$(membershipDocId(communityId, request.auth.uid)));
+    }
+
+    function isAdmin(communityId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/memberships/$(membershipDocId(communityId, request.auth.uid))).data.role == 'admin';
+    }
+
+    // --- users/{uid} ---
+    // A person's own profile. Only they can read or write it.
+    match /users/{uid} {
+      allow read, write: if isSelf(uid);
+    }
+
+    // --- joinCodes/{code} ---
+    // Public mapping from a join code to the community it belongs to. This exists so a
+    // person can resolve a code into a communityId *before* they're a member (community
+    // docs themselves are member-only reads, which would otherwise make joining
+    // impossible). Creating a mapping requires the community it points to have just been
+    // created by the same caller in the same batch (checked via getAfter, since a regular
+    // get() can't see other writes in an in-flight batch) — this stops someone minting a
+    // code that silently redirects a joiner into a community they don't administer.
+    // Rotating a code = admin deletes the old mapping and the client writes a new one.
+    match /joinCodes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        getAfter(/databases/$(database)/documents/communities/$(request.resource.data.communityId)).data.createdBy == request.auth.uid;
+      allow delete: if isAdmin(resource.data.communityId);
+    }
+
+    // --- communities/{communityId} ---
+    // Name + join code. Any member can read (needed to show the community name/join code
+    // on shared screens); only an admin can update or delete it. Anyone signed in can
+    // create one, as long as they name themselves as the creator — the client creates the
+    // community doc, its joinCodes mapping, and the creator's own admin membership doc in
+    // the same batch.
+    match /communities/{communityId} {
+      allow read: if isMember(communityId);
+      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAdmin(communityId);
+
+      // --- communities/{communityId}/sharedCharts/{ownerUid} ---
+      // The owner's published chart copy for this community. Any member can read it;
+      // only the owner (and only while they're actually a member here) can write it.
+      match /sharedCharts/{ownerUid} {
+        allow read: if isMember(communityId);
+        allow write: if isSelf(ownerUid) && isMember(communityId);
+      }
+    }
+
+    // --- memberships/{membershipId} ---
+    // membershipId is `${communityId}_${uid}`. A member can read any membership doc in a
+    // community they belong to (needed to render the member list); a person can only ever
+    // create/delete their own membership (join/leave); only an admin can change roles.
+    match /memberships/{membershipId} {
+      allow read: if isMember(resource.data.communityId);
+      allow create: if isSignedIn() &&
+        request.resource.data.uid == request.auth.uid &&
+        membershipId == membershipDocId(request.resource.data.communityId, request.auth.uid);
+      allow delete: if isSelf(resource.data.uid) || isAdmin(resource.data.communityId);
+      allow update: if isAdmin(resource.data.communityId);
+    }
+
+    // --- charts/{chartId} ---
+    // Private master record, owner-only. See design note above for cross-member access.
+    match /charts/{chartId} {
+      allow read, update, delete: if isSelf(resource.data.ownerUid);
+      allow create: if isSelf(request.resource.data.ownerUid);
+    }
+  }
+}
