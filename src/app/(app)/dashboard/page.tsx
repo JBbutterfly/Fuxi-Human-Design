@@ -36,7 +36,11 @@ export default function DashboardPage() {
       router.replace("/sign-in");
       return;
     }
-    void refresh(user.uid);
+    // Surfaced rather than swallowed: a silent failure here previously looked
+    // identical to "you're just not in any communities yet."
+    refresh(user.uid).catch((err) => {
+      setError(err instanceof Error ? err.message : "Couldn't load your communities.");
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user]);
 

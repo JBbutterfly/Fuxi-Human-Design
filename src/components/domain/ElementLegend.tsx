@@ -1,3 +1,5 @@
+"use client";
+
 import type { CSSProperties } from "react";
 
 type ElementKey = "wood" | "fire" | "earth" | "metal" | "water";

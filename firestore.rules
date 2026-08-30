@@ -30,9 +30,10 @@ service cloud.firestore {
       return communityId + '_' + uid;
     }
 
-    // True if the caller has a membership doc in `communityId`.
+    // True if the caller has a membership doc in `communityId`. `communityId` can be null
+    // here (see the memberships read rule below) — guarded rather than assumed non-null.
     function isMember(communityId) {
-      return isSignedIn() &&
+      return isSignedIn() && communityId != null &&
         exists(/databases/$(database)/documents/memberships/$(membershipDocId(communityId, request.auth.uid)));
     }
 
@@ -87,8 +88,22 @@ service cloud.firestore {
     // membershipId is `${communityId}_${uid}`. A member can read any membership doc in a
     // community they belong to (needed to render the member list); a person can only ever
     // create/delete their own membership (join/leave); only an admin can change roles.
+    //
+    // The read rule below is written to survive being evaluated against *list* queries,
+    // not just single-doc gets. For a list query, Firestore validates the rule against a
+    // representative document built only from the query's own `where()` filters — so a
+    // query filtered on `uid` (list-my-memberships) produces a representative doc with
+    // `uid` but no `communityId`, and one filtered on `communityId` (list-community-
+    // members) has `communityId` but no `uid`. Reading either missing field directly
+    // (`resource.data.communityId`) throws and Firestore denies the *entire* query as a
+    // safety measure — not a permission decision, a rules-evaluation crash. `.get(key,
+    // null)` reads a possibly-absent field without throwing; `isMember` and the `uid`
+    // check are written to treat a null communityId/uid as "no match" rather than fail.
     match /memberships/{membershipId} {
-      allow read: if isMember(resource.data.communityId);
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.get('uid', null) ||
+        isMember(resource.data.get('communityId', null))
+      );
       allow create: if isSignedIn() &&
         request.resource.data.uid == request.auth.uid &&
         membershipId == membershipDocId(request.resource.data.communityId, request.auth.uid);
