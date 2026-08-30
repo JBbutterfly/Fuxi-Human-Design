@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Icon } from "@/components/ui";
+import { Badge, Icon } from "@/components/ui";
 import { GATE_NAMES } from "@/engine/gateNames";
 import { GATE_DESCRIPTIONS } from "@/engine/gateDescriptions";
 import { CHANNEL_DESCRIPTIONS } from "@/engine/channelDescriptions";
 import { GATE_TO_CENTER, GATE_PARTNERS, CHANNEL_BY_KEY, CHANNEL_KEY } from "@/engine/hdData";
+import { GATE_ELEMENTS } from "@/engine/fiveElements";
 
 export default function GateDetailPage() {
   const { number } = useParams<{ number: string }>();
@@ -25,6 +26,7 @@ export default function GateDetailPage() {
   const center = GATE_TO_CENTER[gate];
   const description = GATE_DESCRIPTIONS[gate];
   const partners = GATE_PARTNERS[gate] ?? [];
+  const elements = GATE_ELEMENTS[gate];
 
   return (
     <main style={{ maxWidth: "var(--prose-max)" }} className="flex-1 w-full mx-auto p-8 flex flex-col gap-7">
@@ -36,10 +38,23 @@ export default function GateDetailPage() {
       <div>
         <span style={{ font: "var(--type-mono)", color: "var(--text-accent)" }}>{String(gate).padStart(2, "0")}</span>
         <h1 style={{ font: "var(--type-h1)", color: "var(--text-primary)", marginTop: "var(--sp-2)" }}>{name}</h1>
-        <p style={{ font: "var(--type-ui-sm)", color: "var(--text-muted)", marginTop: "var(--sp-2)" }}>{center}</p>
+        <div className="flex items-center gap-3" style={{ marginTop: "var(--sp-3)" }}>
+          <p style={{ font: "var(--type-ui-sm)", color: "var(--text-muted)" }}>{center}</p>
+          <Badge tone="gold">{elements.primary} · primary</Badge>
+          <Badge tone="jade">{elements.secondary} · secondary</Badge>
+        </div>
       </div>
 
       <p style={{ font: "var(--type-body)", color: "var(--text-primary)" }}>{description}</p>
+
+      <div style={{ padding: "var(--sp-5)", border: "1px solid var(--border-hairline)", borderRadius: "var(--radius-card)", background: "var(--surface-card)" }}>
+        <span className="fuxi-eyebrow">Five elements lens</span>
+        <p style={{ font: "var(--type-body-sm)", color: "var(--text-secondary)", marginTop: "var(--sp-3)" }}>
+          Gate {gate} is Hexagram {gate}: {elements.lowerTrigram} below, {elements.upperTrigram} above. This app reads the
+          lower trigram as the gate&apos;s primary element ({elements.primary}) and the upper trigram as a secondary
+          ({elements.secondary}) — an interpretive lens, not an official part of Human Design.
+        </p>
+      </div>
 
       {partners.length > 0 && (
         <section className="flex flex-col gap-3">
