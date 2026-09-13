@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { Badge, Icon } from "@/components/ui";
 import { GATE_NAMES } from "@/engine/gateNames";
 import { GATE_DESCRIPTIONS } from "@/engine/gateDescriptions";
@@ -9,8 +6,16 @@ import { CHANNEL_DESCRIPTIONS } from "@/engine/channelDescriptions";
 import { GATE_TO_CENTER, GATE_PARTNERS, CHANNEL_BY_KEY, CHANNEL_KEY } from "@/engine/hdData";
 import { GATE_ELEMENTS } from "@/engine/fiveElements";
 
-export default function GateDetailPage() {
-  const { number } = useParams<{ number: string }>();
+export function generateStaticParams() {
+  return Array.from({ length: 64 }, (_, i) => ({ number: String(i + 1) }));
+}
+
+export default async function GateDetailPage({
+  params,
+}: {
+  params: Promise<{ number: string }>;
+}) {
+  const { number } = await params;
   const gate = Number(number);
   const valid = Number.isInteger(gate) && gate >= 1 && gate <= 64;
 

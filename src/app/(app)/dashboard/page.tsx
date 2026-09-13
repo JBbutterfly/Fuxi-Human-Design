@@ -51,7 +51,7 @@ export default function DashboardPage() {
     setError(null);
     try {
       const { communityId } = await createCommunity(newCommunityName, user.uid, profile.displayName);
-      router.push(`/communities/${communityId}`);
+      router.push(`/communities/view?id=${communityId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't create that community.");
     } finally {
@@ -66,7 +66,7 @@ export default function DashboardPage() {
     setError(null);
     try {
       const { communityId } = await joinCommunityByCode(joinCode, user.uid, profile.displayName);
-      router.push(`/communities/${communityId}`);
+      router.push(`/communities/view?id=${communityId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't join with that code.");
     } finally {
@@ -105,7 +105,7 @@ export default function DashboardPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {memberships.map((m) => (
-              <Link key={m.id} href={`/communities/${m.communityId}`} style={{ borderBottom: "none" }}>
+              <Link key={m.id} href={`/communities/view?id=${m.communityId}`} style={{ borderBottom: "none" }}>
                 <Card interactive className="flex items-center justify-between">
                   <span style={{ font: "var(--type-ui)", color: "var(--text-primary)" }}>{m.communityId}</span>
                   <span style={{ font: "var(--type-ui-sm)", color: "var(--text-muted)" }}>{m.role}</span>

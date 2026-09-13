@@ -1,14 +1,15 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthProvider";
 import { getCommunity, leaveCommunity, listCommunityMembers } from "@/lib/communities";
 import { Badge, Button, Card } from "@/components/ui";
 import type { Community, Membership } from "@/types";
 
-export default function CommunityPage() {
-  const { id } = useParams<{ id: string }>();
+function CommunityView() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
   const router = useRouter();
   const { user, loading } = useAuth();
   const [community, setCommunity] = useState<Community | null>(null);
@@ -19,6 +20,10 @@ export default function CommunityPage() {
     if (loading) return;
     if (!user) {
       router.replace("/sign-in");
+      return;
+    }
+    if (!id) {
+      setError("No community specified.");
       return;
     }
     Promise.all([getCommunity(id), listCommunityMembers(id)])
@@ -39,7 +44,7 @@ export default function CommunityPage() {
   const me = members.find((m) => m.uid === user?.uid);
 
   async function handleLeave() {
-    if (!user) return;
+    if (!user || !id) return;
     await leaveCommunity(id, user.uid);
     router.replace("/dashboard");
   }
@@ -86,5 +91,19 @@ export default function CommunityPage() {
         Leave community
       </Button>
     </main>
+  );
+}
+
+export default function CommunityPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex-1 grid place-items-center p-8">
+          <p style={{ font: "var(--type-body)", color: "var(--text-secondary)" }}>Loading…</p>
+        </main>
+      }
+    >
+      <CommunityView />
+    </Suspense>
   );
 }
