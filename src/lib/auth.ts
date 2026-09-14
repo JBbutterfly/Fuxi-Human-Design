@@ -1,9 +1,10 @@
 import {
   GoogleAuthProvider,
+  getRedirectResult,
   isSignInWithEmailLink,
   sendSignInLinkToEmail,
   signInWithEmailLink,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User,
 } from "firebase/auth";
@@ -50,10 +51,24 @@ export async function completeSignInFromLink(
   return credential.user;
 }
 
-export async function signInWithGoogle(): Promise<User> {
-  const credential = await signInWithPopup(auth, new GoogleAuthProvider());
-  await ensureUserProfile(credential.user);
-  return credential.user;
+// Uses a full-page redirect rather than signInWithPopup: Chrome's cross-origin-opener-policy
+// restrictions on Google's own accounts.google.com pages routinely kill popup-based sign-in
+// on hosted (non-localhost) apps, leaving the popup closed with no error and no signed-in user.
+export function signInWithGoogle() {
+  return signInWithRedirect(auth, new GoogleAuthProvider());
+}
+
+/**
+ * Call on load of /sign-in. If the page was just reached via the Google redirect flow,
+ * completes the sign-in and returns the resulting user. Otherwise returns null.
+ */
+export async function completeGoogleRedirect(): Promise<User | null> {
+  const result = await getRedirectResult(auth);
+  if (!result) {
+    return null;
+  }
+  await ensureUserProfile(result.user);
+  return result.user;
 }
 
 export async function ensureUserProfile(user: User) {

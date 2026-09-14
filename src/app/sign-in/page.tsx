@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { completeSignInFromLink, sendMagicLink, signInWithGoogle } from "@/lib/auth";
+import { completeGoogleRedirect, completeSignInFromLink, sendMagicLink, signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/lib/AuthProvider";
 import { Button, Input } from "@/components/ui";
 
@@ -22,18 +22,26 @@ export default function SignInPage() {
       return;
     }
     setStatus("completing");
-    completeSignInFromLink(async () => window.prompt("Confirm the email you signed in with:"))
-      .then((signedInUser) => {
-        if (signedInUser) {
+    (async () => {
+      try {
+        const linkUser = await completeSignInFromLink(async () =>
+          window.prompt("Confirm the email you signed in with:"),
+        );
+        if (linkUser) {
           router.replace("/chart");
-        } else {
-          setStatus("idle");
+          return;
         }
-      })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "That sign-in link didn't work.");
+        const googleUser = await completeGoogleRedirect();
+        if (googleUser) {
+          router.replace("/chart");
+          return;
+        }
+        setStatus("idle");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "That sign-in didn't work.");
         setStatus("error");
-      });
+      }
+    })();
     // Only re-run this on auth-state settling, not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user]);
@@ -55,8 +63,9 @@ export default function SignInPage() {
     setStatus("sending");
     setError(null);
     try {
+      // Navigates away to Google's sign-in page; completion is handled by
+      // completeGoogleRedirect() in the effect above when the browser returns here.
       await signInWithGoogle();
-      router.replace("/chart");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't sign in with Google. Try again.");
       setStatus("error");
