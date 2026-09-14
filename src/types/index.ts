@@ -7,7 +7,14 @@ export interface UserProfile {
   email: string;
   displayName: string;
   createdAt: Timestamp;
+  // Set true the moment this account gets its first membership (community creation, a
+  // code-join, or self-healed after a join request is approved — see
+  // ensureHasCommunityFlag). Gates browsing the visible-communities directory: rules can
+  // check this with a single get() without needing to enumerate every membership doc.
+  hasCommunity?: boolean;
 }
+
+export type CommunityVisibility = "private" | "visible";
 
 export interface Community {
   id: string;
@@ -15,6 +22,19 @@ export interface Community {
   createdBy: string; // uid
   createdAt: Timestamp;
   joinCode: string; // short, human-shareable, rotatable by an admin
+  // "visible" communities show up in the cross-community directory and accept join
+  // requests; "private" ones are join-by-code only.
+  visibility: CommunityVisibility;
+}
+
+// communities/{communityId}/joinRequests/{uid} — a pending request to join a "visible"
+// community. Approving one creates a membership and deletes the request; denying just
+// deletes it.
+export interface JoinRequest {
+  id: string; // == uid
+  uid: string;
+  displayName: string;
+  requestedAt: Timestamp;
 }
 
 export interface Membership {

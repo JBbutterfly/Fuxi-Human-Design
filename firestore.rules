@@ -42,6 +42,15 @@ service cloud.firestore {
         get(/databases/$(database)/documents/memberships/$(membershipDocId(communityId, request.auth.uid))).data.role == 'admin';
     }
 
+    // True once the caller has at least one membership anywhere — gates browsing the
+    // visible-communities directory. A flag on their own profile rather than an unbounded
+    // "do they have any membership doc" lookup, since that can't be expressed as a single
+    // exists()/get() the way isMember() can for one specific community.
+    function hasAnyCommunity() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('hasCommunity', false) == true;
+    }
+
     // --- users/{uid} ---
     // A person's own profile. Only they can read or write it.
     match /users/{uid} {
@@ -65,13 +74,14 @@ service cloud.firestore {
     }
 
     // --- communities/{communityId} ---
-    // Name + join code. Any member can read (needed to show the community name/join code
-    // on shared screens); only an admin can update or delete it. Anyone signed in can
-    // create one, as long as they name themselves as the creator — the client creates the
-    // community doc, its joinCodes mapping, and the creator's own admin membership doc in
-    // the same batch.
+    // Name + join code. A member can always read their own community; a "visible" one is
+    // also readable (and listable, for the directory) by anyone who already has at least
+    // one community of their own. Only an admin can update or delete it. Anyone signed in
+    // can create one, as long as they name themselves as the creator — the client creates
+    // the community doc, its joinCodes mapping, and the creator's own admin membership doc
+    // in the same batch.
     match /communities/{communityId} {
-      allow read: if isMember(communityId);
+      allow read: if isMember(communityId) || (resource.data.visibility == 'visible' && hasAnyCommunity());
       allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
       allow update, delete: if isAdmin(communityId);
 
@@ -81,6 +91,17 @@ service cloud.firestore {
       match /sharedCharts/{ownerUid} {
         allow read: if isMember(communityId);
         allow write: if isSelf(ownerUid) && isMember(communityId);
+      }
+
+      // --- communities/{communityId}/joinRequests/{uid} ---
+      // A pending request to join a "visible" community, keyed by the requester's own uid.
+      // The requester can read/cancel their own; any admin of this community can read (list,
+      // for the approval screen) and delete (approve or deny — approving additionally
+      // creates the membership in the same batch, see the memberships create rule below).
+      match /joinRequests/{uid} {
+        allow read, delete: if isSelf(uid) || isAdmin(communityId);
+        allow create: if isSelf(uid) &&
+          get(/databases/$(database)/documents/communities/$(communityId)).data.visibility == 'visible';
       }
     }
 
@@ -104,9 +125,13 @@ service cloud.firestore {
         request.auth.uid == resource.data.get('uid', null) ||
         isMember(resource.data.get('communityId', null))
       );
+      // Either the person is creating their own membership (create-community, join-by-code),
+      // or an admin of the target community is creating it on someone else's behalf
+      // (approving a join request) — both still bound to the membershipId matching the
+      // community+uid it claims, so an admin can't forge a membership pointing elsewhere.
       allow create: if isSignedIn() &&
-        request.resource.data.uid == request.auth.uid &&
-        membershipId == membershipDocId(request.resource.data.communityId, request.auth.uid);
+        membershipId == membershipDocId(request.resource.data.communityId, request.resource.data.uid) &&
+        (request.resource.data.uid == request.auth.uid || isAdmin(request.resource.data.communityId));
       allow delete: if isSelf(resource.data.uid) || isAdmin(resource.data.communityId);
       allow update: if isAdmin(resource.data.communityId);
     }

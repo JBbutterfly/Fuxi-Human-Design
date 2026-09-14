@@ -5,10 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/AuthProvider";
-import { createCommunity, joinCommunityByCode, listMyMemberships } from "@/lib/communities";
+import {
+  createCommunity,
+  ensureHasCommunityFlag,
+  getCommunity,
+  joinCommunityByCode,
+  listMyMemberships,
+} from "@/lib/communities";
 import { db } from "@/lib/firebase";
 import { signOutUser } from "@/lib/auth";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Card, Checkbox, Input } from "@/components/ui";
 import type { Membership, UserProfile } from "@/types";
 
 export default function DashboardPage() {
@@ -16,18 +22,28 @@ export default function DashboardPage() {
   const { user, loading } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [communityNames, setCommunityNames] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newCommunityName, setNewCommunityName] = useState("");
+  const [makeVisible, setMakeVisible] = useState(false);
   const [joinCode, setJoinCode] = useState("");
 
   async function refresh(uid: string) {
     const [profileSnap, myMemberships] = await Promise.all([
       getDoc(doc(db, "users", uid)),
       listMyMemberships(uid),
+      ensureHasCommunityFlag(uid),
     ]);
     setProfile(profileSnap.exists() ? (profileSnap.data() as UserProfile) : null);
     setMemberships(myMemberships);
+
+    const communities = await Promise.all(myMemberships.map((m) => getCommunity(m.communityId)));
+    setCommunityNames(
+      Object.fromEntries(
+        communities.filter((c) => c !== null).map((c) => [c.id, c.name]),
+      ),
+    );
   }
 
   useEffect(() => {
@@ -54,7 +70,12 @@ export default function DashboardPage() {
     setBusy(true);
     setError(null);
     try {
-      const { communityId } = await createCommunity(newCommunityName, user.uid, profile.displayName);
+      const { communityId } = await createCommunity(
+        newCommunityName,
+        user.uid,
+        profile.displayName,
+        makeVisible ? "visible" : "private",
+      );
       router.push(`/communities/view?id=${communityId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't create that community.");
@@ -105,7 +126,12 @@ export default function DashboardPage() {
       </div>
 
       <section className="flex flex-col gap-3">
-        <span className="fuxi-eyebrow">Your communities</span>
+        <div className="flex items-center justify-between">
+          <span className="fuxi-eyebrow">Your communities</span>
+          <Link href="/communities/browse" style={{ font: "var(--type-ui-sm)" }}>
+            Browse communities
+          </Link>
+        </div>
         {memberships.length === 0 ? (
           <p style={{ font: "var(--type-body-sm)", color: "var(--text-secondary)" }}>
             Not in any communities yet.
@@ -115,7 +141,9 @@ export default function DashboardPage() {
             {memberships.map((m) => (
               <Link key={m.id} href={`/communities/view?id=${m.communityId}`} style={{ borderBottom: "none" }}>
                 <Card interactive className="flex items-center justify-between">
-                  <span style={{ font: "var(--type-ui)", color: "var(--text-primary)" }}>{m.communityId}</span>
+                  <span style={{ font: "var(--type-ui)", color: "var(--text-primary)" }}>
+                    {communityNames[m.communityId] ?? "…"}
+                  </span>
                   <span style={{ font: "var(--type-ui-sm)", color: "var(--text-muted)" }}>{m.role}</span>
                 </Card>
               </Link>
@@ -132,6 +160,11 @@ export default function DashboardPage() {
             value={newCommunityName}
             onChange={(e) => setNewCommunityName(e.target.value)}
             placeholder="e.g. The Beall family"
+          />
+          <Checkbox
+            label="Make this community visible so others can find it and request to join"
+            checked={makeVisible}
+            onChange={setMakeVisible}
           />
           <Button type="submit" disabled={busy}>
             Create

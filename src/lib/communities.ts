@@ -1,15 +1,17 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
   query,
   serverTimestamp,
+  setDoc,
   where,
   writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Community, Membership } from "@/types";
+import type { Community, CommunityVisibility, JoinRequest, Membership, UserProfile } from "@/types";
 
 // Characters chosen to avoid visual ambiguity when someone reads a code aloud or copies
 // it by hand (no 0/O, 1/I/L).
@@ -31,6 +33,7 @@ export async function createCommunity(
   name: string,
   uid: string,
   displayName: string,
+  visibility: CommunityVisibility,
 ): Promise<{ communityId: string; joinCode: string }> {
   const communityRef = doc(collection(db, "communities"));
   const joinCode = generateJoinCode();
@@ -41,6 +44,7 @@ export async function createCommunity(
     createdBy: uid,
     createdAt: serverTimestamp(),
     joinCode,
+    visibility,
   });
   batch.set(doc(db, "joinCodes", joinCode), { communityId: communityRef.id });
   batch.set(doc(db, "memberships", membershipId(communityRef.id, uid)), {
@@ -50,6 +54,7 @@ export async function createCommunity(
     role: "admin",
     joinedAt: serverTimestamp(),
   });
+  batch.set(doc(db, "users", uid), { hasCommunity: true }, { merge: true });
 
   await batch.commit();
   return { communityId: communityRef.id, joinCode };
@@ -81,6 +86,7 @@ export async function joinCommunityByCode(
     role: "member",
     joinedAt: serverTimestamp(),
   });
+  batch.set(doc(db, "users", uid), { hasCommunity: true }, { merge: true });
   await batch.commit();
   return { communityId, alreadyMember: false };
 }
@@ -100,6 +106,58 @@ export async function listCommunityMembers(communityId: string): Promise<Members
     query(collection(db, "memberships"), where("communityId", "==", communityId)),
   );
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Membership);
+}
+
+export async function listVisibleCommunities(): Promise<Community[]> {
+  const snap = await getDocs(query(collection(db, "communities"), where("visibility", "==", "visible")));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Community);
+}
+
+export async function requestToJoin(communityId: string, uid: string, displayName: string) {
+  await setDoc(doc(db, "communities", communityId, "joinRequests", uid), {
+    uid,
+    displayName,
+    requestedAt: serverTimestamp(),
+  });
+}
+
+export async function cancelJoinRequest(communityId: string, uid: string) {
+  await deleteDoc(doc(db, "communities", communityId, "joinRequests", uid));
+}
+
+export async function listJoinRequests(communityId: string): Promise<JoinRequest[]> {
+  const snap = await getDocs(collection(db, "communities", communityId, "joinRequests"));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as JoinRequest);
+}
+
+export async function approveJoinRequest(communityId: string, uid: string, displayName: string) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, "memberships", membershipId(communityId, uid)), {
+    communityId,
+    uid,
+    displayName,
+    role: "member",
+    joinedAt: serverTimestamp(),
+  });
+  batch.delete(doc(db, "communities", communityId, "joinRequests", uid));
+  await batch.commit();
+}
+
+export async function denyJoinRequest(communityId: string, uid: string) {
+  await deleteDoc(doc(db, "communities", communityId, "joinRequests", uid));
+}
+
+// An admin approving a join request can create the new member's membership doc, but can't
+// write to that member's own users/{uid} profile (self-write-only, see firestore.rules) to
+// flip their hasCommunity flag. So the newly-approved member's own client self-heals it here
+// next time it loads somewhere that already fetches their memberships.
+export async function ensureHasCommunityFlag(uid: string) {
+  const memberships = await listMyMemberships(uid);
+  if (memberships.length === 0) return;
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+  if (snap.exists() && (snap.data() as UserProfile).hasCommunity) return;
+  await setDoc(ref, { hasCommunity: true }, { merge: true });
 }
 
 export async function leaveCommunity(communityId: string, uid: string) {
