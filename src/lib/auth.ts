@@ -1,7 +1,9 @@
 import {
+  GoogleAuthProvider,
   isSignInWithEmailLink,
   sendSignInLinkToEmail,
   signInWithEmailLink,
+  signInWithPopup,
   signOut,
   type User,
 } from "firebase/auth";
@@ -48,6 +50,12 @@ export async function completeSignInFromLink(
   return credential.user;
 }
 
+export async function signInWithGoogle(): Promise<User> {
+  const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+  await ensureUserProfile(credential.user);
+  return credential.user;
+}
+
 export async function ensureUserProfile(user: User) {
   const ref = doc(db, "users", user.uid);
   const existing = await getDoc(ref);
@@ -57,7 +65,7 @@ export async function ensureUserProfile(user: User) {
   await setDoc(ref, {
     uid: user.uid,
     email: user.email ?? "",
-    displayName: user.email?.split("@")[0] ?? "Member",
+    displayName: user.displayName ?? user.email?.split("@")[0] ?? "Member",
     createdAt: serverTimestamp(),
   });
 }

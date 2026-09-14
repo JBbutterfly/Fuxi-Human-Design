@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { completeSignInFromLink, sendMagicLink } from "@/lib/auth";
+import { completeSignInFromLink, sendMagicLink, signInWithGoogle } from "@/lib/auth";
 import { useAuth } from "@/lib/AuthProvider";
 import { Button, Input } from "@/components/ui";
 
@@ -51,6 +51,18 @@ export default function SignInPage() {
     }
   }
 
+  async function handleGoogleSignIn() {
+    setStatus("sending");
+    setError(null);
+    try {
+      await signInWithGoogle();
+      router.replace("/chart");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't sign in with Google. Try again.");
+      setStatus("error");
+    }
+  }
+
   if (status === "completing") {
     return (
       <main className="fuxi-starfield flex-1 grid place-items-center p-8">
@@ -90,6 +102,22 @@ export default function SignInPage() {
           {status === "sending" ? "Sending" : "Send sign-in link"}
         </Button>
         {error && <p style={{ font: "var(--type-ui-sm)", fontWeight: "var(--fw-regular)", color: "var(--status-error)" }}>{error}</p>}
+
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
+          <div style={{ flex: 1, height: 1, background: "var(--border-hairline)" }} />
+          <span style={{ font: "var(--type-ui-sm)", color: "var(--text-muted)" }}>or</span>
+          <div style={{ flex: 1, height: 1, background: "var(--border-hairline)" }} />
+        </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={status === "sending"}
+          onClick={handleGoogleSignIn}
+          fullWidth
+        >
+          Continue with Google
+        </Button>
       </form>
     </main>
   );
