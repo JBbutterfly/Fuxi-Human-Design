@@ -30,13 +30,15 @@ export function NavRail() {
         padding: "var(--sp-5) 0",
       }}
     >
-      <Image
-        src="/brand/app-icon.svg"
-        alt="Fuxi"
-        width={32}
-        height={32}
-        style={{ borderRadius: "22.37%", marginBottom: "var(--sp-6)", marginTop: "var(--sp-2)", pointerEvents: "none" }}
-      />
+      <Link href="/chart" style={{ borderBottom: "none", marginBottom: "var(--sp-6)", marginTop: "var(--sp-2)" }}>
+        <Image
+          src="/brand/app-icon.svg"
+          alt="Fuxi — home"
+          width={32}
+          height={32}
+          style={{ borderRadius: "22.37%", display: "block" }}
+        />
+      </Link>
       {ITEMS.map(([href, label, icon]) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
