@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "demo-fuxi-preview"
+    "default": "demo-fuxi-preview",
+    "production": "fuxi-connection-design"
   }
 }
