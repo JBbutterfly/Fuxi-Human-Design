@@ -10,6 +10,7 @@ const ITEMS: [string, string, IconName][] = [
   ["/gates", "Gates", "grid-3x3"],
   ["/elements", "Elements", "circle-dot"],
   ["/dashboard", "Connections", "users"],
+  ["/notes", "Notes", "notebook-pen"],
 ];
 
 export function NavRail() {
@@ -46,14 +47,12 @@ export function NavRail() {
           </Link>
         );
       })}
-      {/* Notes has no feature behind it yet — present in chrome, inert like Settings below. */}
-      <IconButton label="Notes">
-        <Icon name="notebook-pen" size={18} />
-      </IconButton>
       <div style={{ flex: 1 }} />
-      <IconButton label="Settings">
-        <Icon name="settings" size={18} />
-      </IconButton>
+      <Link href="/settings" style={{ borderBottom: "none" }}>
+        <IconButton label="Settings" active={pathname === "/settings"}>
+          <Icon name="settings" size={18} />
+        </IconButton>
+      </Link>
     </nav>
   );
 }

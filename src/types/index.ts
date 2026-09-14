@@ -46,6 +46,15 @@ export interface Chart {
   createdAt: Timestamp;
 }
 
+export interface Note {
+  id: string;
+  ownerUid: string;
+  title: string;
+  body: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 // Published copy of a Chart, stored at communities/{communityId}/sharedCharts/{ownerUid}
 // so other members of that community can read it without needing access to the owner's
 // private `charts/{chartId}` doc. Written by the owner; see firestore.rules for why.

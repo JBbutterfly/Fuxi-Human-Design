@@ -6,10 +6,12 @@ import {
   Grid3x3,
   Layers,
   NotebookPen,
+  Plus,
   Search,
   Settings,
   Share2,
   SlidersHorizontal,
+  Trash2,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -30,6 +32,8 @@ const REGISTRY: Record<string, LucideIcon> = {
   layers: Layers,
   "share-2": Share2,
   "arrow-left": ArrowLeft,
+  plus: Plus,
+  "trash-2": Trash2,
 };
 
 export type IconName = keyof typeof REGISTRY;

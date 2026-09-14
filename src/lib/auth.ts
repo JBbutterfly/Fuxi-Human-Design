@@ -85,6 +85,10 @@ export async function ensureUserProfile(user: User) {
   });
 }
 
+export async function updateDisplayName(uid: string, displayName: string) {
+  await setDoc(doc(db, "users", uid), { displayName }, { merge: true });
+}
+
 export async function signOutUser() {
   await signOut(auth);
 }

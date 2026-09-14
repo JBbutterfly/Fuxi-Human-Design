@@ -117,5 +117,12 @@ service cloud.firestore {
       allow read, update, delete: if isSelf(resource.data.ownerUid);
       allow create: if isSelf(request.resource.data.ownerUid);
     }
+
+    // --- notes/{noteId} ---
+    // Personal notes, owner-only. Not shared with communities.
+    match /notes/{noteId} {
+      allow read, update, delete: if isSelf(resource.data.ownerUid);
+      allow create: if isSelf(request.resource.data.ownerUid);
+    }
   }
 }
