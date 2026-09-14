@@ -46,7 +46,11 @@ export default function DashboardPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !profile) return;
+    if (!user) return;
+    if (!profile) {
+      setError("Your profile isn't ready yet — refresh the page and try again.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -61,7 +65,11 @@ export default function DashboardPage() {
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !profile) return;
+    if (!user) return;
+    if (!profile) {
+      setError("Your profile isn't ready yet — refresh the page and try again.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
